@@ -31,15 +31,20 @@ func main() {
 			return err
 		}
 
-		if info.IsDir() {
-			return nil
-		}
-
 		relPath, err := filepath.Rel(*dir, path)
 		if err != nil {
 			return err
 		}
 
+		// Пропускаем директории, если они исключены
+		if info.IsDir() {
+			if isExcluded(relPath, excludePatterns) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Пропускаем файлы, если они исключены или не включены
 		if !isIncluded(relPath, includePatterns, excludePatterns) {
 			return nil
 		}
@@ -144,6 +149,15 @@ func isIncluded(relPath string, include, exclude []string) bool {
 		}
 	}
 
+	return false
+}
+
+func isExcluded(relPath string, exclude []string) bool {
+	for _, pattern := range exclude {
+		if matches(pattern, relPath, filepath.Base(relPath)) {
+			return true
+		}
+	}
 	return false
 }
 
